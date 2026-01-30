@@ -31,7 +31,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="이번 달 발신정보"
+                    android:text="이번 달 사용 현황 (목표)"
                     android:textSize="18sp"
                     android:textStyle="bold" />
                 <ImageButton
@@ -48,22 +48,52 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+                android:orientation="vertical"
+                android:layout_marginTop="8dp"
+                android:padding="12dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:elevation="1dp">
 
                 <TextView
                     android:id="@+id/tvCallCount"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="발신콜수 : 0" />
+                    android:text="발신콜수 : 0"
+                    android:textStyle="bold" />
+                <ProgressBar
+                    android:id="@+id/pbCallCount"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:progressTint="@color/primary_blue" />
 
                 <TextView
                     android:id="@+id/tvCallDuration"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="발신시간 : 00:00:00" />
+                    android:text="발신시간 : 00:00:00"
+                    android:textStyle="bold" />
+                <ProgressBar
+                    android:id="@+id/pbCallDuration"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:progressTint="#4CAF50" />
+
+                <TextView
+                    android:id="@+id/tvDataUsage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="데이터 사용 : 0.0 MB"
+                    android:textStyle="bold" />
+                <ProgressBar
+                    android:id="@+id/pbDataUsage"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progressTint="#FF9800" />
             </LinearLayout>
             
             <!-- Goals -->
@@ -71,7 +101,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="이번 달 발신목표 (0 = 무제한)"
+                android:text="이번 달 목표 (0 = 무제한)"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -86,7 +116,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:hint="목표 콜수"
+                    android:hint="콜수"
                     android:inputType="number" />
 
                 <EditText
@@ -94,10 +124,53 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:hint="목표 시간(분)"
+                    android:hint="시간(분)"
+                    android:inputType="number" />
+
+                <EditText
+                    android:id="@+id/etGoalData"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="데이터(MB)"
                     android:inputType="number" />
             </LinearLayout>
 
+            <!-- Data Auto Consumption -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp">
+                <TextView
+                    android:id="@+id/tvDataTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="자동 데이터 소모"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchAutoData"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"/>
+                
+                <androidx.appcompat.widget.AppCompatCheckBox
+                    android:id="@+id/cbDataTurbo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/tvDataTitle"
+                    android:text="터보 모드 (고속 소모)"
+                    android:textSize="14sp"
+                    android:textColor="#F44336"
+                    android:layout_marginTop="4dp" />
+            </RelativeLayout>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="목표 달성 시까지 백그라운드에서 데이터를 소모합니다.\n(Wi-Fi에서는 동작하지 않음)"
+                android:textSize="12sp"
+                android:textColor="#666666" />
+            
             <!-- Number List Section -->
             <RelativeLayout
                 android:layout_width="match_parent"

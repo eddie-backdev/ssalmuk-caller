@@ -24,14 +24,21 @@ object Prefs {
     private const val KEY_LAST_MONTH = "last_stats_month"
     private const val KEY_GOAL_COUNT = "goal_call_count"
     private const val KEY_GOAL_DURATION = "goal_call_duration"
+    private const val KEY_GOAL_DATA = "goal_data_mb"
+    private const val KEY_STATS_DATA = "stats_data_usage_mb"
     private const val KEY_CALL_DAYS = "call_days" 
     private const val KEY_PAUSE_START = "pause_start"
     private const val KEY_PAUSE_END = "pause_end" 
     private const val KEY_PAUSE_FEATURES = "pause_features"
+    private const val KEY_AUTO_DATA_ENABLED = "auto_data_enabled"
+    private const val KEY_DATA_TURBO_ENABLED = "data_turbo_enabled"
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
     }
+
+    fun isDataTurboEnabled(context: Context) = getPrefs(context).getBoolean(KEY_DATA_TURBO_ENABLED, false)
+    fun setDataTurboEnabled(context: Context, enabled: Boolean) = getPrefs(context).edit().putBoolean(KEY_DATA_TURBO_ENABLED, enabled).apply()
 
     fun getPhoneNumbers(context: Context): List<String> {
         val raw = getPrefs(context).getString(KEY_NUMBERS, "") ?: ""
@@ -50,6 +57,9 @@ object Prefs {
 
     fun isAutoAnswerEnabled(context: Context) = getPrefs(context).getBoolean(KEY_AUTO_ANSWER_ENABLED, false)
     fun setAutoAnswerEnabled(context: Context, enabled: Boolean) = getPrefs(context).edit().putBoolean(KEY_AUTO_ANSWER_ENABLED, enabled).apply()
+
+    fun isAutoDataEnabled(context: Context) = getPrefs(context).getBoolean(KEY_AUTO_DATA_ENABLED, false)
+    fun setAutoDataEnabled(context: Context, enabled: Boolean) = getPrefs(context).edit().putBoolean(KEY_AUTO_DATA_ENABLED, enabled).apply()
 
     fun getCallInterval(context: Context): Pair<Int, Int> {
         val min = getPrefs(context).getInt(KEY_INTERVAL_MIN, 17); val max = getPrefs(context).getInt(KEY_INTERVAL_MAX, 30); return Pair(min, max)
@@ -75,7 +85,7 @@ object Prefs {
         val currentMonth = Calendar.getInstance().get(Calendar.MONTH)
         val savedMonth = getPrefs(context).getInt(KEY_LAST_MONTH, -1)
         if (currentMonth != savedMonth) {
-            getPrefs(context).edit().putInt(KEY_STATS_COUNT, 0).putLong(KEY_STATS_DURATION, 0L).putInt(KEY_LAST_MONTH, currentMonth).apply()
+            getPrefs(context).edit().putInt(KEY_STATS_COUNT, 0).putLong(KEY_STATS_DURATION, 0L).putFloat(KEY_STATS_DATA, 0f).putInt(KEY_LAST_MONTH, currentMonth).apply()
         }
     }
     
@@ -86,15 +96,23 @@ object Prefs {
     fun addCallDuration(context: Context, durationSec: Long) {
         checkAndResetMonthlyStats(context); val current = getPrefs(context).getLong(KEY_STATS_DURATION, 0L); getPrefs(context).edit().putLong(KEY_STATS_DURATION, current + durationSec).apply()
     }
+
+    fun addDataUsage(context: Context, mb: Float) {
+        checkAndResetMonthlyStats(context); val current = getPrefs(context).getFloat(KEY_STATS_DATA, 0f); getPrefs(context).edit().putFloat(KEY_STATS_DATA, current + mb).apply()
+    }
     
     fun getCallCount(context: Context) = getPrefs(context).getInt(KEY_STATS_COUNT, 0)
     fun getCallDuration(context: Context) = getPrefs(context).getLong(KEY_STATS_DURATION, 0L)
+    fun getDataUsage(context: Context) = getPrefs(context).getFloat(KEY_STATS_DATA, 0f)
     
     fun getGoalCount(context: Context) = getPrefs(context).getInt(KEY_GOAL_COUNT, 0)
     fun setGoalCount(context: Context, count: Int) = getPrefs(context).edit().putInt(KEY_GOAL_COUNT, count).apply()
     
     fun getGoalDuration(context: Context) = getPrefs(context).getInt(KEY_GOAL_DURATION, 0)
     fun setGoalDuration(context: Context, minutes: Int) = getPrefs(context).edit().putInt(KEY_GOAL_DURATION, minutes).apply()
+
+    fun getGoalData(context: Context) = getPrefs(context).getInt(KEY_GOAL_DATA, 0)
+    fun setGoalData(context: Context, mb: Int) = getPrefs(context).edit().putInt(KEY_GOAL_DATA, mb).apply()
     
     fun getCallDays(context: Context): Set<String> {
         return getPrefs(context).getStringSet(KEY_CALL_DAYS, setOf("1","2","3","4","5","6","7"))!!
@@ -123,6 +141,7 @@ object Prefs {
         json.put(KEY_AUTO_CALL_ENABLED, isAutoCallEnabled(context))
         json.put(KEY_AUTO_HANGUP_ENABLED, isAutoHangupEnabled(context))
         json.put(KEY_AUTO_ANSWER_ENABLED, isAutoAnswerEnabled(context))
+        json.put(KEY_AUTO_DATA_ENABLED, isAutoDataEnabled(context))
         json.put(KEY_INTERVAL_MIN, getPrefs(context).getInt(KEY_INTERVAL_MIN, 17))
         json.put(KEY_INTERVAL_MAX, getPrefs(context).getInt(KEY_INTERVAL_MAX, 30))
         json.put(KEY_HANGUP_MIN, getPrefs(context).getInt(KEY_HANGUP_MIN, 7))
@@ -131,6 +150,7 @@ object Prefs {
         json.put(KEY_MIN_SUCCESS_DURATION, getMinSuccessDuration(context))
         json.put(KEY_GOAL_COUNT, getGoalCount(context))
         json.put(KEY_GOAL_DURATION, getGoalDuration(context))
+        json.put(KEY_GOAL_DATA, getGoalData(context))
         json.put(KEY_PAUSE_START, getPrefs(context).getString(KEY_PAUSE_START, "21:00"))
         json.put(KEY_PAUSE_END, getPrefs(context).getString(KEY_PAUSE_END, "07:40"))
         val days = JSONArray(); getCallDays(context).forEach { days.put(it) }; json.put(KEY_CALL_DAYS, days)
@@ -144,6 +164,7 @@ object Prefs {
         editor.putBoolean(KEY_AUTO_CALL_ENABLED, json.optBoolean(KEY_AUTO_CALL_ENABLED))
         editor.putBoolean(KEY_AUTO_HANGUP_ENABLED, json.optBoolean(KEY_AUTO_HANGUP_ENABLED))
         editor.putBoolean(KEY_AUTO_ANSWER_ENABLED, json.optBoolean(KEY_AUTO_ANSWER_ENABLED))
+        editor.putBoolean(KEY_AUTO_DATA_ENABLED, json.optBoolean(KEY_AUTO_DATA_ENABLED))
         editor.putInt(KEY_INTERVAL_MIN, json.optInt(KEY_INTERVAL_MIN, 17))
         editor.putInt(KEY_INTERVAL_MAX, json.optInt(KEY_INTERVAL_MAX, 30))
         editor.putInt(KEY_HANGUP_MIN, json.optInt(KEY_HANGUP_MIN, 7))
@@ -152,6 +173,7 @@ object Prefs {
         editor.putInt(KEY_MIN_SUCCESS_DURATION, json.optInt(KEY_MIN_SUCCESS_DURATION, 5))
         editor.putInt(KEY_GOAL_COUNT, json.optInt(KEY_GOAL_COUNT, 0))
         editor.putInt(KEY_GOAL_DURATION, json.optInt(KEY_GOAL_DURATION, 0))
+        editor.putInt(KEY_GOAL_DATA, json.optInt(KEY_GOAL_DATA, 0))
         editor.putString(KEY_PAUSE_START, json.optString(KEY_PAUSE_START, "21:00"))
         editor.putString(KEY_PAUSE_END, json.optString(KEY_PAUSE_END, "07:40"))
         val daysArr = json.optJSONArray(KEY_CALL_DAYS); val daysSet = mutableSetOf<String>(); if (daysArr != null) { for (i in 0 until daysArr.length()) daysSet.add(daysArr.getString(i)) }; editor.putStringSet(KEY_CALL_DAYS, daysSet)

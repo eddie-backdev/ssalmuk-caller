@@ -1,10 +1,20 @@
 package com.example.dutycaller
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import java.util.Calendar
 import java.util.Random
 
 object Utils {
     private val random = Random()
+
+    fun isMobileDataConnected(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
+    }
 
     fun getRandomDelay(min: Int, max: Int): Long {
         if (min >= max) return min.toLong()

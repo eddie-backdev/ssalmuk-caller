@@ -209,13 +209,9 @@ class CallService : InCallService() {
     }
     
     private fun notifyCallEnded() {
-        val intent = Intent(this, AutomationService::class.java)
-        intent.action = AutomationService.ACTION_CALL_ENDED
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
+        val intent = Intent(this, AutoClickService::class.java)
+        intent.action = AutoClickService.ACTION_CALL_ENDED
+        startService(intent)
     }
 
     private fun createNotificationChannel() {
