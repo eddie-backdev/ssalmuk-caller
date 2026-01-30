@@ -4,6 +4,9 @@
 *.ap_
 *.aab
 
+# 특정 릴리스 출력 폴더 통째로 제외
+**/release/
+
 # Android Studio / IntelliJ
 .idea/
 *.iml
