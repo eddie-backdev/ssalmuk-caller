@@ -1,0 +1,4 @@
+#Fri Jan 30 23:35:55 KST 2026
+base.0=/Users/eddie/Downloads/DutyCallerSource/app/build/intermediates/dex/release/mergeDexRelease/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex

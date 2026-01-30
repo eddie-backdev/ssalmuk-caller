@@ -1,0 +1,34 @@
+[
+    {
+        "merged": "com.example.dutycaller.app-mergeReleaseResources-31:/layout/activity_main.xml",
+        "source": "com.example.dutycaller.app-main-33:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-mergeReleaseResources-31:/layout/fragment_call_log.xml",
+        "source": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-main-33:/layout/fragment_call_log.xml"
+    },
+    {
+        "merged": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-mergeReleaseResources-31:/layout/item_number.xml",
+        "source": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-main-33:/layout/item_number.xml"
+    },
+    {
+        "merged": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-mergeReleaseResources-31:/layout/activity_main.xml",
+        "source": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-main-33:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-mergeReleaseResources-31:/layout/item_call_log.xml",
+        "source": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-main-33:/layout/item_call_log.xml"
+    },
+    {
+        "merged": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-mergeReleaseResources-31:/layout/fragment_dialer.xml",
+        "source": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-main-33:/layout/fragment_dialer.xml"
+    },
+    {
+        "merged": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-mergeReleaseResources-31:/layout/fragment_auto_call.xml",
+        "source": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-main-33:/layout/fragment_auto_call.xml"
+    },
+    {
+        "merged": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-mergeReleaseResources-31:/layout/activity_manage_numbers.xml",
+        "source": "/Users/eddie/.gradle/daemon/9.0-milestone-1/com.example.dutycaller.app-main-33:/layout/activity_manage_numbers.xml"
+    }
+]

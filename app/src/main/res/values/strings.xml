@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">쌀먹통화</string>
+    <string name="title">쌀먹통화</string>
+    <string name="stats_sent_count">발신콜수 : %1$d</string>
+    <string name="stats_sent_time">발신시간 : %1$s</string>
+    <string name="label_numbers">연결할 번호목록</string>
+    <string name="label_auto_call">통화종료 후 자동걸기</string>
+    <string name="label_wifi_cond">WIFI 연결 시 중지</string>
+    <string name="label_call_interval">걸기간격 %1$d초 ~ %2$d초</string>
+    <string name="label_auto_hangup">통화연결 후 자동끊기</string>
+    <string name="label_hangup_interval">끊기간격 %1$d분 ~ %2$d분</string>
+    <string name="label_auto_answer">수신전화 자동받기</string>
+    <string name="label_pause_time">일시중지 - 시간대</string>
+    <string name="btn_start">시작</string>
+    <string name="btn_stop">중지</string>
+    <string name="perm_required">권한 필요</string>
+    <string name="perm_desc">앱이 정상 작동하려면 접근성 권한이 필요합니다.</string>
+    <string name="accessibility_desc">의무통화 앱이 통화를 자동으로 종료하기 위해 화면의 종료 버튼을 감지하고 누를 수 있도록 허용해주세요.</string>
+</resources>

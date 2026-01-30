@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="light_gray">#F0F0F0</color>
+    <color name="primary_blue">#2196F3</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="accessibility_desc">의무통화 앱이 통화를 자동으로 종료하기 위해 화면의 종료 버튼을 감지하고 누를 수 있도록 허용해주세요.</string>
+    <string name="app_name">쌀먹통화</string>
+    <string name="btn_start">시작</string>
+    <string name="btn_stop">중지</string>
+    <string name="label_auto_answer">수신전화 자동받기</string>
+    <string name="label_auto_call">통화종료 후 자동걸기</string>
+    <string name="label_auto_hangup">통화연결 후 자동끊기</string>
+    <string name="label_call_interval">걸기간격 %1$d초 ~ %2$d초</string>
+    <string name="label_hangup_interval">끊기간격 %1$d분 ~ %2$d분</string>
+    <string name="label_numbers">연결할 번호목록</string>
+    <string name="label_pause_time">일시중지 - 시간대</string>
+    <string name="label_wifi_cond">WIFI 연결 시 중지</string>
+    <string name="perm_desc">앱이 정상 작동하려면 접근성 권한이 필요합니다.</string>
+    <string name="perm_required">권한 필요</string>
+    <string name="stats_sent_count">발신콜수 : %1$d</string>
+    <string name="stats_sent_time">발신시간 : %1$s</string>
+    <string name="title">쌀먹통화</string>
+    <style name="DialPadButtonStyle" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:layout_width">80dp</item>
+        <item name="android:layout_height">80dp</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textColor">#000000</item>
+    </style>
+    <style name="Theme.DutyCaller" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_blue</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+</resources>
