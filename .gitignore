@@ -1,0 +1,50 @@
+# Built variants
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Build artifacts
+build/
+*/build/
+
+# Log files
+*.log
+
+# Keystore files (보안)
+*.jks
+*.keystore
+
+# API Keys (선택 사항: 별도 파일로 관리할 경우)
+secrets.properties
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+# Thumbnails
+._*
+
+# Files that might be created on a GBR
+.Spotlight-V100
+.Trashes
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
