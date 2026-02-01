@@ -32,9 +32,18 @@ object Prefs {
     private const val KEY_PAUSE_FEATURES = "pause_features"
     private const val KEY_AUTO_DATA_ENABLED = "auto_data_enabled"
     private const val KEY_DATA_TURBO_ENABLED = "data_turbo_enabled"
+    private const val KEY_NEXT_CALL_TIMESTAMP = "next_call_timestamp"
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    }
+
+    fun setNextCallTimestamp(context: Context, timestamp: Long) {
+        getPrefs(context).edit().putLong(KEY_NEXT_CALL_TIMESTAMP, timestamp).apply()
+    }
+
+    fun getNextCallTimestamp(context: Context): Long {
+        return getPrefs(context).getLong(KEY_NEXT_CALL_TIMESTAMP, 0L)
     }
 
     fun isDataTurboEnabled(context: Context) = getPrefs(context).getBoolean(KEY_DATA_TURBO_ENABLED, false)

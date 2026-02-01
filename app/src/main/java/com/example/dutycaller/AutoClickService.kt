@@ -2,6 +2,8 @@ package com.example.dutycaller
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Path
@@ -27,16 +29,15 @@ class AutoClickService : AccessibilityService() {
         const val ACTION_CANCEL_SCHEDULE = "ACTION_CANCEL_SCHEDULE"
         const val ACTION_NEXT_CALL_SCHEDULED = "ACTION_NEXT_CALL_SCHEDULED"
         const val ACTION_UPDATE_CONFIG = "ACTION_UPDATE_CONFIG"
+        const val ACTION_MAKE_CALL = "ACTION_MAKE_CALL" // New action
         const val EXTRA_DELAY_MILLIS = "EXTRA_DELAY_MILLIS"
     }
 
     private val handler = Handler(Looper.getMainLooper())
     private var isAutoMode = false
     private val random = Random()
-    private var isCallConnected = false 
-    
-    private val makeCallRunnable = Runnable { if (isAutoMode) makeCall() }
-    
+    private var isCallConnected = false
+
     private val connectionMonitorRunnable = object : Runnable {
         override fun run() {
             if (!isCallConnected && isScreenShowingTimer()) {
@@ -61,6 +62,7 @@ class AutoClickService : AccessibilityService() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         instance = null; isAutoMode = false
+        cancelScheduledCall()
         return super.onUnbind(intent)
     }
 
@@ -68,41 +70,124 @@ class AutoClickService : AccessibilityService() {
     override fun onInterrupt() {}
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("AutoClickService", "onStartCommand received action: ${intent?.action}")
         when (intent?.action) {
-            ACTION_START_AUTO -> { if (!isAutoMode) { isAutoMode = true; scheduleNextCall() } }
-            ACTION_UPDATE_CONFIG -> { if (isAutoMode) { handler.removeCallbacks(makeCallRunnable); scheduleNextCall() } }
-            ACTION_STOP_AUTO -> { isAutoMode = false; handler.removeCallbacksAndMessages(null); sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, 0L).setPackage(packageName)) }
-            ACTION_CANCEL_SCHEDULE -> { if (isAutoMode) { handler.removeCallbacks(makeCallRunnable); sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, -3L).setPackage(packageName)) } }
-            ACTION_CALL_ENDED -> { 
+            ACTION_START_AUTO -> {
+                if (!isAutoMode) {
+                    isAutoMode = true
+                    Log.d("AutoClickService", "Auto mode started. Scheduling first call.")
+                    scheduleNextCall()
+                }
+            }
+            ACTION_UPDATE_CONFIG -> {
+                if (isAutoMode) {
+                    Log.d("AutoClickService", "Config updated. Rescheduling call.")
+                    cancelScheduledCall()
+                    scheduleNextCall()
+                }
+            }
+            ACTION_STOP_AUTO -> {
+                Log.d("AutoClickService", "Auto mode stopped.")
+                isAutoMode = false
+                cancelScheduledCall()
+                handler.removeCallbacksAndMessages(null) // Stop hangup/connection monitors
+                sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, 0L).setPackage(packageName))
+            }
+            ACTION_CANCEL_SCHEDULE -> {
+                if (isAutoMode) {
+                    Log.d("AutoClickService", "Call schedule cancelled by user.")
+                    cancelScheduledCall()
+                    sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, -3L).setPackage(packageName))
+                }
+            }
+            ACTION_CALL_ENDED -> {
                 isCallConnected = false
                 connectedStartTime = 0 // Reset
                 handler.removeCallbacks(connectionMonitorRunnable)
                 handler.removeCallbacks(forceHangupRunnable)
-                if (isAutoMode) scheduleNextCall() 
+                if (isAutoMode) {
+                    Log.d("AutoClickService", "Call ended. Scheduling next call.")
+                    scheduleNextCall()
+                }
+            }
+            ACTION_MAKE_CALL -> {
+                if (isAutoMode) {
+                    Log.d("AutoClickService", "ACTION_MAKE_CALL received, making call.")
+                    makeCall()
+                }
             }
         }
         return START_STICKY
     }
 
+    private fun getCallAlarmPendingIntent(): PendingIntent {
+        val intent = Intent(this, CallAlarmReceiver::class.java)
+        // FLAG_IMMUTABLE is required for newer Android versions.
+        // Using a request code of 0 is fine since we only have one alarm of this type.
+        return PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    private fun cancelScheduledCall() {
+        Log.d("AutoClickService", "Cancelling scheduled call.")
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(getCallAlarmPendingIntent())
+        Prefs.setNextCallTimestamp(this, 0L)
+    }
+
     private fun scheduleNextCall(delayOverride: Long? = null) {
-        if (!isAutoMode) return
+        if (!isAutoMode) {
+            Log.w("AutoClickService", "scheduleNextCall called but auto mode is off.")
+            return
+        }
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val pendingIntent = getCallAlarmPendingIntent()
+        var delayMillis: Long
+
         val allowedDays = Prefs.getCallDays(this)
         if (!Utils.isTodayAllowed(allowedDays)) {
+            Log.d("AutoClickService", "Today is not an allowed call day. Scheduling for tomorrow.")
             sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, -1L).setPackage(packageName))
-            handler.postDelayed({ scheduleNextCall() }, 60 * 60 * 1000); return
+            // Check again in 1 hour
+            delayMillis = 60 * 60 * 1000L
+        } else {
+            val pauseTime = Prefs.getPauseTime(this)
+            val pauseFeatures = Prefs.getPauseFeatures(this)
+            if (pauseFeatures.contains("CALL") && Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)) {
+                Log.d("AutoClickService", "Currently in a pause period. Scheduling for later.")
+                sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, -2L).setPackage(packageName))
+                // Check again in 5 minutes
+                delayMillis = 5 * 60 * 1000L
+            } else {
+                // This is the main path for scheduling a call
+                val interval = Prefs.getCallInterval(this)
+                val delaySec = Utils.getRandomDelay(interval.first, interval.second)
+                delayMillis = delayOverride ?: (delaySec * 1000L)
+                Log.d("AutoClickService", "Scheduling next call in ${delayMillis / 1000} seconds.")
+                sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, delayMillis).setPackage(packageName))
+            }
         }
-        val pauseTime = Prefs.getPauseTime(this); val pauseFeatures = Prefs.getPauseFeatures(this)
-        if (pauseFeatures.contains("CALL") && Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)) {
-            sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, -2L).setPackage(packageName))
-            handler.postDelayed({ scheduleNextCall() }, 5 * 60 * 1000); return
+
+        val triggerAtMillis = System.currentTimeMillis() + delayMillis
+        
+        // Ensure the app has permission to schedule exact alarms.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            Log.e("AutoClickService", "Cannot schedule exact alarms. Please grant the permission.")
+            Toast.makeText(this, "정확한 알람 권한이 필요합니다.", Toast.LENGTH_LONG).show()
+            // Fallback or notify user
+            // For simplicity, we'll just log and fail here. 
+            // A real app should guide the user to the settings.
+            return
         }
-        val interval = Prefs.getCallInterval(this); val delaySec = Utils.getRandomDelay(interval.first, interval.second)
-        val delayMillis = delayOverride ?: (delaySec * 1000); sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, delayMillis).setPackage(packageName))
-        handler.removeCallbacks(makeCallRunnable); handler.postDelayed(makeCallRunnable, delayMillis)
+
+        Log.d("AutoClickService", "Setting alarm to trigger in ${delayMillis}ms.")
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+        Prefs.setNextCallTimestamp(this, triggerAtMillis)
     }
 
     private fun makeCall() {
         if (!isAutoMode) return
+        Prefs.setNextCallTimestamp(this, 0L) // Clear timestamp as we are making the call now
         val numbers = Prefs.getPhoneNumbers(this)
         if (numbers.isEmpty()) return
         val number = numbers[random.nextInt(numbers.size)]

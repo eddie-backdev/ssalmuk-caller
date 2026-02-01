@@ -33,7 +33,8 @@ class CallStateReceiver : BroadcastReceiver() {
                         val connectedAt = AutoClickService.connectedStartTime
                         if (connectedAt > 0) {
                             val durationSec = (System.currentTimeMillis() - connectedAt) / 1000
-                            if (durationSec > 0) {
+                            val minSuccessDuration = Prefs.getMinSuccessDuration(context)
+                            if (durationSec >= minSuccessDuration) {
                                 Log.d("CallStateReceiver", "Call Duration: $durationSec s. Updating stats.")
                                 Prefs.addCallDuration(context, durationSec)
                                 Prefs.incrementCallCount(context)
@@ -41,6 +42,8 @@ class CallStateReceiver : BroadcastReceiver() {
                                 val updateIntent = Intent(ACTION_STATS_UPDATED)
                                 updateIntent.setPackage(context.packageName)
                                 context.sendBroadcast(updateIntent)
+                            } else {
+                                Log.d("CallStateReceiver", "Call duration ($durationSec s) was less than minimum ($minSuccessDuration s). Stats skipped.")
                             }
                         } else {
                             Log.d("CallStateReceiver", "Call never connected (no timer detected). Stats skipped.")

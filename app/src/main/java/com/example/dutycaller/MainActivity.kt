@@ -2,6 +2,7 @@ package com.example.dutycaller
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -45,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var switchAutoAnswer: SwitchCompat
     private lateinit var btnSetAccessibility: Button
     private lateinit var btnSetBattery: Button // Added
+    private lateinit var btnSetAlarm: Button
+    private lateinit var btnBackupRestore: Button
     private lateinit var tvCallCount: TextView
     private lateinit var tvCallDuration: TextView
     private lateinit var tvDataUsage: TextView
@@ -65,6 +68,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cbPauseCall: AppCompatCheckBox
     private lateinit var cbPauseHangup: AppCompatCheckBox
     private lateinit var cbPauseAnswer: AppCompatCheckBox
+    private lateinit var etMinSuccessDuration: EditText
 
     private var countDownTimer: CountDownTimer? = null 
 
@@ -112,14 +116,45 @@ class MainActivity : AppCompatActivity() {
     }
     
     override fun onDestroy() { super.onDestroy(); try { unregisterReceiver(mainReceiver); countDownTimer?.cancel() } catch (e: Exception) {} }
-    override fun onResume() { super.onResume(); Prefs.checkAndResetMonthlyStats(this); updateStats(); updateNumberCount() }
-    override fun onCreateOptionsMenu(menu: Menu): Boolean { menuInflater.inflate(R.menu.menu_main, menu); return true }
+    override fun onResume() {
+        super.onResume()
+        Prefs.checkAndResetMonthlyStats(this)
+        updateStats()
+        updateNumberCount()
+        checkAlarmPermission()
+        updateCountdownFromPrefs()
+    }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_export -> { val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "application/json"; putExtra(Intent.EXTRA_TITLE, "ssalmuk_settings.json") }; exportLauncher.launch(intent); true }
-            R.id.action_import -> { val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "application/json" }; importLauncher.launch(intent); true }
-            else -> super.onOptionsItemSelected(item)
+    private fun updateCountdownFromPrefs() {
+        if (!Prefs.isAutoCallEnabled(this)) {
+            startCountdown(0)
+            return
+        }
+        val nextCallTimestamp = Prefs.getNextCallTimestamp(this)
+        if (nextCallTimestamp > System.currentTimeMillis()) {
+            val delay = nextCallTimestamp - System.currentTimeMillis()
+            startCountdown(delay)
+        } else if (nextCallTimestamp == 0L && tvIntervalLabel.text.contains("다음 발신까지")) {
+            // A call might have just finished, and the next one isn't scheduled yet.
+            // Reset to default text if it's showing a countdown.
+            startCountdown(0)
+        }
+        // If timestamp is in the past but not 0, a call is likely overdue. 
+        // The service will handle it, so we don't need to change the UI,
+        // which might be showing "Calling...".
+    }
+
+    
+    private fun checkAlarmPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                btnSetAlarm.visibility = View.VISIBLE
+            } else {
+                btnSetAlarm.visibility = View.GONE
+            }
+        } else {
+            btnSetAlarm.visibility = View.GONE
         }
     }
     
@@ -132,12 +167,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        switchAutoCall = findViewById(R.id.switchAutoCall); etIntervalMin = findViewById(R.id.etIntervalMin); etIntervalMax = findViewById(R.id.etIntervalMax); switchAutoHangup = findViewById(R.id.switchAutoHangup); etHangupMin = findViewById(R.id.etHangupMin); etHangupMax = findViewById(R.id.etHangupMax); etNoAnswerTimeout = findViewById(R.id.etNoAnswerTimeout); switchAutoAnswer = findViewById(R.id.switchAutoAnswer); btnSetAccessibility = findViewById(R.id.btnSetAccessibility); btnSetBattery = findViewById(R.id.btnSetBattery)
+        switchAutoCall = findViewById(R.id.switchAutoCall); etIntervalMin = findViewById(R.id.etIntervalMin); etIntervalMax = findViewById(R.id.etIntervalMax); switchAutoHangup = findViewById(R.id.switchAutoHangup); etHangupMin = findViewById(R.id.etHangupMin); etHangupMax = findViewById(R.id.etHangupMax); etNoAnswerTimeout = findViewById(R.id.etNoAnswerTimeout); switchAutoAnswer = findViewById(R.id.switchAutoAnswer); btnSetAccessibility = findViewById(R.id.btnSetAccessibility); btnSetBattery = findViewById(R.id.btnSetBattery); btnSetAlarm = findViewById(R.id.btnSetAlarm)
         val btnSetOverlay = findViewById<Button>(R.id.btnSetOverlay)
+        btnBackupRestore = findViewById(R.id.btnBackupRestore)
         tvCallCount = findViewById(R.id.tvCallCount); tvCallDuration = findViewById(R.id.tvCallDuration); tvDataUsage = findViewById(R.id.tvDataUsage)
         pbCallCount = findViewById(R.id.pbCallCount); pbCallDuration = findViewById(R.id.pbCallDuration); pbDataUsage = findViewById(R.id.pbDataUsage)
         tvIntervalLabel = findViewById(R.id.tvIntervalLabel); btnManageNumbers = findViewById(R.id.btnManageNumbers); tvNumberCount = findViewById(R.id.tvNumberCount); etGoalCount = findViewById(R.id.etGoalCount); etGoalDuration = findViewById(R.id.etGoalDuration); etGoalData = findViewById(R.id.etGoalData); switchAutoData = findViewById(R.id.switchAutoData); cbDataTurbo = findViewById(R.id.cbDataTurbo)
-        layoutWeekDays = findViewById(R.id.layoutWeekDays); etPauseStart = findViewById(R.id.etPauseStart); etPauseEnd = findViewById(R.id.etPauseEnd); cbPauseCall = findViewById(R.id.cbPauseCall); cbPauseHangup = findViewById(R.id.cbPauseHangup); cbPauseAnswer = findViewById(R.id.cbPauseAnswer)
+        layoutWeekDays = findViewById(R.id.layoutWeekDays); etPauseStart = findViewById(R.id.etPauseStart); etPauseEnd = findViewById(R.id.etPauseEnd); cbPauseCall = findViewById(R.id.cbPauseCall); cbPauseHangup = findViewById(R.id.cbPauseHangup); cbPauseAnswer = findViewById(R.id.cbPauseAnswer); etMinSuccessDuration = findViewById(R.id.etMinSuccessDuration)
     }
 
     private fun loadPrefs() {
@@ -145,6 +181,7 @@ class MainActivity : AppCompatActivity() {
         etGoalCount.setText(Prefs.getGoalCount(this).let { if(it==0) "" else it.toString() }); etGoalDuration.setText(Prefs.getGoalDuration(this).let { if(it==0) "" else it.toString() }); etGoalData.setText(Prefs.getGoalData(this).let { if(it==0) "" else it.toString() })
         val days = Prefs.getCallDays(this); for (i in 0 until layoutWeekDays.childCount) { val v = layoutWeekDays.getChildAt(i); if (v is AppCompatCheckBox) { val t = v.tag?.toString(); if (t != null) v.isChecked = days.contains(t) } }
         val pT = Prefs.getPauseTime(this); etPauseStart.setText(pT.first); etPauseEnd.setText(pT.second); val f = Prefs.getPauseFeatures(this); cbPauseCall.isChecked = f.contains("CALL"); cbPauseHangup.isChecked = f.contains("HANGUP"); cbPauseAnswer.isChecked = f.contains("ANSWER"); updateStats()
+        etMinSuccessDuration.setText(Prefs.getMinSuccessDuration(this).toString())
         if (switchAutoData.isChecked) startAutomationService(AutomationService.ACTION_START)
     }
     
@@ -170,22 +207,29 @@ class MainActivity : AppCompatActivity() {
 
     private fun savePrefs() {
         Prefs.setCallInterval(this, etIntervalMin.text.toString().toIntOrNull() ?: 17, etIntervalMax.text.toString().toIntOrNull() ?: 30); Prefs.setHangupInterval(this, etHangupMin.text.toString().toIntOrNull() ?: 7, etHangupMax.text.toString().toIntOrNull() ?: 10); Prefs.setNoAnswerTimeout(this, etNoAnswerTimeout.text.toString().toIntOrNull() ?: 30); Prefs.setGoalCount(this, etGoalCount.text.toString().toIntOrNull() ?: 0); Prefs.setGoalDuration(this, etGoalDuration.text.toString().toIntOrNull() ?: 0); Prefs.setGoalData(this, etGoalData.text.toString().toIntOrNull() ?: 0)
+        Prefs.setMinSuccessDuration(this, etMinSuccessDuration.text.toString().toIntOrNull() ?: 5)
         val d = mutableSetOf<String>(); for (i in 0 until layoutWeekDays.childCount) { val v = layoutWeekDays.getChildAt(i); if (v is AppCompatCheckBox) { val t = v.tag?.toString(); if (t != null && v.isChecked) d.add(t) } }; Prefs.setCallDays(this, d); Prefs.setPauseTime(this, etPauseStart.text.toString(), etPauseEnd.text.toString()); val f = mutableSetOf<String>(); if (cbPauseCall.isChecked) f.add("CALL"); if (cbPauseHangup.isChecked) f.add("HANGUP"); if (cbPauseAnswer.isChecked) f.add("ANSWER"); Prefs.setPauseFeatures(this, f); if (switchAutoCall.isChecked) startAutoClickService(AutoClickService.ACTION_UPDATE_CONFIG)
     }
 
     private fun setupListeners() {
         btnManageNumbers.setOnClickListener { startActivity(Intent(this, ManageNumbersActivity::class.java)) }
         val tW = object : TextWatcher { override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}; override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}; override fun afterTextChanged(s: Editable?) { savePrefs(); updateStats() } }
-        etIntervalMin.addTextChangedListener(tW); etIntervalMax.addTextChangedListener(tW); etHangupMin.addTextChangedListener(tW); etHangupMax.addTextChangedListener(tW); etNoAnswerTimeout.addTextChangedListener(tW); etPauseStart.addTextChangedListener(tW); etPauseEnd.addTextChangedListener(tW); etGoalCount.addTextChangedListener(tW); etGoalDuration.addTextChangedListener(tW); etGoalData.addTextChangedListener(tW)
+        etIntervalMin.addTextChangedListener(tW); etIntervalMax.addTextChangedListener(tW); etHangupMin.addTextChangedListener(tW); etHangupMax.addTextChangedListener(tW); etNoAnswerTimeout.addTextChangedListener(tW); etPauseStart.addTextChangedListener(tW); etPauseEnd.addTextChangedListener(tW); etGoalCount.addTextChangedListener(tW); etGoalDuration.addTextChangedListener(tW); etGoalData.addTextChangedListener(tW); etMinSuccessDuration.addTextChangedListener(tW)
         val dL = { _: android.widget.CompoundButton, _: Boolean -> savePrefs() }
         for (i in 0 until layoutWeekDays.childCount) { val v = layoutWeekDays.getChildAt(i); if (v is AppCompatCheckBox) v.setOnCheckedChangeListener(dL) }; cbPauseCall.setOnCheckedChangeListener(dL); cbPauseHangup.setOnCheckedChangeListener(dL); cbPauseAnswer.setOnCheckedChangeListener(dL)
-        switchAutoCall.setOnCheckedChangeListener { _, iC -> Prefs.setAutoCallEnabled(this, iC); if (iC) { if (Prefs.getPhoneNumbers(this).isEmpty()) { Toast.makeText(this, "전화번호를 먼저 등록해주세요.", Toast.LENGTH_SHORT).show(); switchAutoCall.isChecked = false; return@setOnCheckedChangeListener }; if (!isAccessibilityServiceEnabled()) { Toast.makeText(this, "접근성 권한이 필요합니다.", Toast.LENGTH_LONG).show(); startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); switchAutoCall.isChecked = false; return@setOnCheckedChangeListener }; startAutoClickService(AutoClickService.ACTION_START_AUTO) } else { startAutoClickService(AutoClickService.ACTION_STOP_AUTO); countDownTimer?.cancel(); tvIntervalLabel.text = "걸기간격 설정 (초)"; tvIntervalLabel.setTextColor(getColor(android.R.color.black)) } }
+        switchAutoCall.setOnCheckedChangeListener { _, iC -> Prefs.setAutoCallEnabled(this, iC); if (iC) { if (Prefs.getPhoneNumbers(this).isEmpty()) { Toast.makeText(this, "전화번호를 먼저 등록해주세요.", Toast.LENGTH_SHORT).show(); switchAutoCall.isChecked = false; return@setOnCheckedChangeListener }; if (!isAccessibilityServiceEnabled()) { Toast.makeText(this, "접근성 권한이 필요합니다.", Toast.LENGTH_LONG).show(); startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); switchAutoCall.isChecked = false; return@setOnCheckedChangeListener }; startAutoClickService(AutoClickService.ACTION_START_AUTO) } else { startAutoClickService(AutoClickService.ACTION_STOP_AUTO); Prefs.setNextCallTimestamp(this, 0L); countDownTimer?.cancel(); tvIntervalLabel.text = "걸기간격 설정 (초)"; tvIntervalLabel.setTextColor(getColor(android.R.color.black)) } }
         switchAutoHangup.setOnCheckedChangeListener { _, iC -> Prefs.setAutoHangupEnabled(this, iC) }
         switchAutoAnswer.setOnCheckedChangeListener { _, iC -> Prefs.setAutoAnswerEnabled(this, iC); val msg = if(iC) "자동 받기 켜짐" else "자동 받기 꺼짐"; Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() }
         switchAutoData.setOnCheckedChangeListener { _, iC -> Prefs.setAutoDataEnabled(this, iC); if (iC) startAutomationService(AutomationService.ACTION_START) else startAutomationService(AutomationService.ACTION_STOP) }
         cbDataTurbo.setOnCheckedChangeListener { _, iC -> Prefs.setDataTurboEnabled(this, iC) }
         btnSetAccessibility.setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
         btnSetBattery.setOnClickListener { requestIgnoreBatteryOptimization() }
+        btnSetAlarm.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")))
+            }
+        }
+        btnBackupRestore.setOnClickListener { showBackupRestoreDialog() }
         findViewById<Button>(R.id.btnSetOverlay).setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
@@ -193,6 +237,32 @@ class MainActivity : AppCompatActivity() {
             }
         }
         findViewById<View>(R.id.btnResetStats).setOnClickListener { androidx.appcompat.app.AlertDialog.Builder(this).setTitle("통계 초기화").setMessage("이번 달 발신콜수와 발신시간, 데이터 사용량을 모두 초기화하시겠습니까?").setPositiveButton("초기화") { _, _ -> val ed = getSharedPreferences("duty_caller_prefs", Context.MODE_PRIVATE).edit(); ed.putInt("stats_call_count", 0); ed.putLong("stats_call_duration", 0L); ed.putFloat("stats_data_usage_mb", 0f); ed.apply(); updateStats(); Toast.makeText(this, "통계가 초기화되었습니다.", Toast.LENGTH_SHORT).show() }.setNegativeButton("취소", null).show() }
+    }
+
+    private fun showBackupRestoreDialog() {
+        val options = arrayOf<CharSequence>("설정 내보내기 (백업)", "설정 가져오기 (복원)")
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("설정 관리")
+            .setItems(options) { dialog, which ->
+                when (which) {
+                    0 -> { // Export
+                        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            type = "application/json"
+                            putExtra(Intent.EXTRA_TITLE, "ssalmuk_settings.json")
+                        }
+                        exportLauncher.launch(intent)
+                    }
+                    1 -> { // Import
+                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            type = "application/json"
+                        }
+                        importLauncher.launch(intent)
+                    }
+                }
+            }
+            .show()
     }
 
     private fun requestIgnoreBatteryOptimization() {

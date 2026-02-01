@@ -296,6 +296,26 @@
                     android:layout_weight="1" />
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="최소 통화 인정 시간 (초) "
+                    android:textStyle="bold" />
+                <EditText
+                    android:id="@+id/etMinSuccessDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:hint="5"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
             <!-- Auto Hangup Settings -->
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -451,6 +471,28 @@
                 android:backgroundTint="#4CAF50"
                 android:text="다른 앱 위에 표시 설정 (권장)"
                 android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btnSetAlarm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#00BCD4"
+                android:text="정확한 알람 권한 설정 (권장)"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btnBackupRestore"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#673AB7"
+                android:text="설정 백업/복원"
+                android:textColor="@color/white"
+                app:icon="@drawable/ic_settings_backup_restore"
+                app:iconGravity="textStart"
+                app:iconTint="@color/white" />
 
             <Button
                 android:id="@+id/btnSetAccessibility"
