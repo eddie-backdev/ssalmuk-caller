@@ -383,6 +383,24 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"/>
             </RelativeLayout>
+
+            <!-- Auto Mute Settings -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="통화 시작시 음소거"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchAutoMute"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"/>
+            </RelativeLayout>
             
             <!-- Pause Settings -->
             <TextView

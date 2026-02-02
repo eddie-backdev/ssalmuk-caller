@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etHangupMax: EditText
     private lateinit var etNoAnswerTimeout: EditText
     private lateinit var switchAutoAnswer: SwitchCompat
+    private lateinit var switchAutoMute: SwitchCompat
     private lateinit var btnSetAccessibility: Button
     private lateinit var btnSetBattery: Button // Added
     private lateinit var btnSetAlarm: Button
@@ -167,7 +168,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        switchAutoCall = findViewById(R.id.switchAutoCall); etIntervalMin = findViewById(R.id.etIntervalMin); etIntervalMax = findViewById(R.id.etIntervalMax); switchAutoHangup = findViewById(R.id.switchAutoHangup); etHangupMin = findViewById(R.id.etHangupMin); etHangupMax = findViewById(R.id.etHangupMax); etNoAnswerTimeout = findViewById(R.id.etNoAnswerTimeout); switchAutoAnswer = findViewById(R.id.switchAutoAnswer); btnSetAccessibility = findViewById(R.id.btnSetAccessibility); btnSetBattery = findViewById(R.id.btnSetBattery); btnSetAlarm = findViewById(R.id.btnSetAlarm)
+        switchAutoCall = findViewById(R.id.switchAutoCall); etIntervalMin = findViewById(R.id.etIntervalMin); etIntervalMax = findViewById(R.id.etIntervalMax); switchAutoHangup = findViewById(R.id.switchAutoHangup); etHangupMin = findViewById(R.id.etHangupMin); etHangupMax = findViewById(R.id.etHangupMax); etNoAnswerTimeout = findViewById(R.id.etNoAnswerTimeout); switchAutoAnswer = findViewById(R.id.switchAutoAnswer); switchAutoMute = findViewById(R.id.switchAutoMute); btnSetAccessibility = findViewById(R.id.btnSetAccessibility); btnSetBattery = findViewById(R.id.btnSetBattery); btnSetAlarm = findViewById(R.id.btnSetAlarm)
         val btnSetOverlay = findViewById<Button>(R.id.btnSetOverlay)
         btnBackupRestore = findViewById(R.id.btnBackupRestore)
         tvCallCount = findViewById(R.id.tvCallCount); tvCallDuration = findViewById(R.id.tvCallDuration); tvDataUsage = findViewById(R.id.tvDataUsage)
@@ -177,7 +178,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPrefs() {
-        switchAutoCall.isChecked = Prefs.isAutoCallEnabled(this); updateNumberCount(); val cI = Prefs.getCallInterval(this); etIntervalMin.setText(cI.first.toString()); etIntervalMax.setText(cI.second.toString()); switchAutoHangup.isChecked = Prefs.isAutoHangupEnabled(this); val hI = Prefs.getHangupInterval(this); etHangupMin.setText(hI.first.toString()); etHangupMax.setText(hI.second.toString()); etNoAnswerTimeout.setText(Prefs.getNoAnswerTimeout(this).toString()); switchAutoAnswer.isChecked = Prefs.isAutoAnswerEnabled(this); switchAutoData.isChecked = Prefs.isAutoDataEnabled(this); cbDataTurbo.isChecked = Prefs.isDataTurboEnabled(this)
+        switchAutoCall.isChecked = Prefs.isAutoCallEnabled(this); updateNumberCount(); val cI = Prefs.getCallInterval(this); etIntervalMin.setText(cI.first.toString()); etIntervalMax.setText(cI.second.toString()); switchAutoHangup.isChecked = Prefs.isAutoHangupEnabled(this); val hI = Prefs.getHangupInterval(this); etHangupMin.setText(hI.first.toString()); etHangupMax.setText(hI.second.toString()); etNoAnswerTimeout.setText(Prefs.getNoAnswerTimeout(this).toString()); switchAutoAnswer.isChecked = Prefs.isAutoAnswerEnabled(this); switchAutoMute.isChecked = Prefs.isAutoMuteEnabled(this); switchAutoData.isChecked = Prefs.isAutoDataEnabled(this); cbDataTurbo.isChecked = Prefs.isDataTurboEnabled(this)
         etGoalCount.setText(Prefs.getGoalCount(this).let { if(it==0) "" else it.toString() }); etGoalDuration.setText(Prefs.getGoalDuration(this).let { if(it==0) "" else it.toString() }); etGoalData.setText(Prefs.getGoalData(this).let { if(it==0) "" else it.toString() })
         val days = Prefs.getCallDays(this); for (i in 0 until layoutWeekDays.childCount) { val v = layoutWeekDays.getChildAt(i); if (v is AppCompatCheckBox) { val t = v.tag?.toString(); if (t != null) v.isChecked = days.contains(t) } }
         val pT = Prefs.getPauseTime(this); etPauseStart.setText(pT.first); etPauseEnd.setText(pT.second); val f = Prefs.getPauseFeatures(this); cbPauseCall.isChecked = f.contains("CALL"); cbPauseHangup.isChecked = f.contains("HANGUP"); cbPauseAnswer.isChecked = f.contains("ANSWER"); updateStats()
@@ -220,6 +221,7 @@ class MainActivity : AppCompatActivity() {
         switchAutoCall.setOnCheckedChangeListener { _, iC -> Prefs.setAutoCallEnabled(this, iC); if (iC) { if (Prefs.getPhoneNumbers(this).isEmpty()) { Toast.makeText(this, "전화번호를 먼저 등록해주세요.", Toast.LENGTH_SHORT).show(); switchAutoCall.isChecked = false; return@setOnCheckedChangeListener }; if (!isAccessibilityServiceEnabled()) { Toast.makeText(this, "접근성 권한이 필요합니다.", Toast.LENGTH_LONG).show(); startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); switchAutoCall.isChecked = false; return@setOnCheckedChangeListener }; startAutoClickService(AutoClickService.ACTION_START_AUTO) } else { startAutoClickService(AutoClickService.ACTION_STOP_AUTO); Prefs.setNextCallTimestamp(this, 0L); countDownTimer?.cancel(); tvIntervalLabel.text = "걸기간격 설정 (초)"; tvIntervalLabel.setTextColor(getColor(android.R.color.black)) } }
         switchAutoHangup.setOnCheckedChangeListener { _, iC -> Prefs.setAutoHangupEnabled(this, iC) }
         switchAutoAnswer.setOnCheckedChangeListener { _, iC -> Prefs.setAutoAnswerEnabled(this, iC); val msg = if(iC) "자동 받기 켜짐" else "자동 받기 꺼짐"; Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() }
+        switchAutoMute.setOnCheckedChangeListener { _, iC -> Prefs.setAutoMuteEnabled(this, iC); val msg = if(iC) "통화 시작시 음소거 켜짐" else "통화 시작시 음소거 꺼짐"; Toast.makeText(this, msg, Toast.LENGTH_SHORT).show() }
         switchAutoData.setOnCheckedChangeListener { _, iC -> Prefs.setAutoDataEnabled(this, iC); if (iC) startAutomationService(AutomationService.ACTION_START) else startAutomationService(AutomationService.ACTION_STOP) }
         cbDataTurbo.setOnCheckedChangeListener { _, iC -> Prefs.setDataTurboEnabled(this, iC) }
         btnSetAccessibility.setOnClickListener { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }

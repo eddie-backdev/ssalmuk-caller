@@ -12,6 +12,7 @@ object Prefs {
     private const val KEY_AUTO_CALL_ENABLED = "auto_call_enabled"
     private const val KEY_AUTO_HANGUP_ENABLED = "auto_hangup_enabled"
     private const val KEY_AUTO_ANSWER_ENABLED = "auto_answer_enabled"
+    private const val KEY_AUTO_MUTE_ENABLED = "auto_mute_enabled"
     private const val KEY_INTERVAL_MIN = "interval_min"
     private const val KEY_INTERVAL_MAX = "interval_max"
     private const val KEY_HANGUP_MIN = "hangup_min"
@@ -66,6 +67,9 @@ object Prefs {
 
     fun isAutoAnswerEnabled(context: Context) = getPrefs(context).getBoolean(KEY_AUTO_ANSWER_ENABLED, false)
     fun setAutoAnswerEnabled(context: Context, enabled: Boolean) = getPrefs(context).edit().putBoolean(KEY_AUTO_ANSWER_ENABLED, enabled).apply()
+
+    fun isAutoMuteEnabled(context: Context) = getPrefs(context).getBoolean(KEY_AUTO_MUTE_ENABLED, false)
+    fun setAutoMuteEnabled(context: Context, enabled: Boolean) = getPrefs(context).edit().putBoolean(KEY_AUTO_MUTE_ENABLED, enabled).apply()
 
     fun isAutoDataEnabled(context: Context) = getPrefs(context).getBoolean(KEY_AUTO_DATA_ENABLED, false)
     fun setAutoDataEnabled(context: Context, enabled: Boolean) = getPrefs(context).edit().putBoolean(KEY_AUTO_DATA_ENABLED, enabled).apply()
@@ -150,6 +154,7 @@ object Prefs {
         json.put(KEY_AUTO_CALL_ENABLED, isAutoCallEnabled(context))
         json.put(KEY_AUTO_HANGUP_ENABLED, isAutoHangupEnabled(context))
         json.put(KEY_AUTO_ANSWER_ENABLED, isAutoAnswerEnabled(context))
+        json.put(KEY_AUTO_MUTE_ENABLED, isAutoMuteEnabled(context))
         json.put(KEY_AUTO_DATA_ENABLED, isAutoDataEnabled(context))
         json.put(KEY_INTERVAL_MIN, getPrefs(context).getInt(KEY_INTERVAL_MIN, 17))
         json.put(KEY_INTERVAL_MAX, getPrefs(context).getInt(KEY_INTERVAL_MAX, 30))
@@ -173,6 +178,7 @@ object Prefs {
         editor.putBoolean(KEY_AUTO_CALL_ENABLED, json.optBoolean(KEY_AUTO_CALL_ENABLED))
         editor.putBoolean(KEY_AUTO_HANGUP_ENABLED, json.optBoolean(KEY_AUTO_HANGUP_ENABLED))
         editor.putBoolean(KEY_AUTO_ANSWER_ENABLED, json.optBoolean(KEY_AUTO_ANSWER_ENABLED))
+        editor.putBoolean(KEY_AUTO_MUTE_ENABLED, json.optBoolean(KEY_AUTO_MUTE_ENABLED))
         editor.putBoolean(KEY_AUTO_DATA_ENABLED, json.optBoolean(KEY_AUTO_DATA_ENABLED))
         editor.putInt(KEY_INTERVAL_MIN, json.optInt(KEY_INTERVAL_MIN, 17))
         editor.putInt(KEY_INTERVAL_MAX, json.optInt(KEY_INTERVAL_MAX, 30))

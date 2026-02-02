@@ -3,6 +3,7 @@ package com.example.dutycaller
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.telephony.TelephonyManager
 import android.util.Log
 
@@ -16,10 +17,15 @@ class CallStateReceiver : BroadcastReceiver() {
         try {
             if (intent.action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
                 val stateStr = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
-                
+                val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
                 when (stateStr) {
                     TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                         Log.d("CallStateReceiver", "Call Started (OFFHOOK)")
+                        if (Prefs.isAutoMuteEnabled(context)) {
+                            Log.d("CallStateReceiver", "Auto-muting microphone.")
+                            audioManager.isMicrophoneMute = true
+                        }
                         pauseAutoCallSchedule(context)
                         val service = AutoClickService.instance
                         service?.scheduleAutoHangup()
@@ -27,6 +33,10 @@ class CallStateReceiver : BroadcastReceiver() {
                     
                     TelephonyManager.EXTRA_STATE_IDLE -> {
                         Log.d("CallStateReceiver", "Call Ended (IDLE)")
+                        if (audioManager.isMicrophoneMute) {
+                            Log.d("CallStateReceiver", "Unmuting microphone.")
+                            audioManager.isMicrophoneMute = false
+                        }
                         AutoClickService.instance?.cancelHangup()
                         
                         // Use REAL connection time from AutoClickService

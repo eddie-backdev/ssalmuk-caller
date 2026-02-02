@@ -55,6 +55,15 @@
 - **앱 이름 오류 수정**: `AndroidManifest.xml`의 `android:label` 속성 오타를 수정하여 앱 이름이 "쌀먹통화"로 정상 표시되도록 함.
 - **설정 백업/복원 버튼 통합**: 기존의 툴바 메뉴 대신, 메인 화면에 '설정 백업/복원' 버튼을 추가. 클릭 시 `AlertDialog`를 통해 백업 또는 복원 기능을 명확하게 선택하도록 하여 사용자 경험을 개선.
 
+### ⑤ 통화 시작 시 마이크 자동 음소거 기능 추가
+- **개요**: 통화가 시작되면 자동으로 사용자 마이크를 음소거하는 기능 추가 (사용자 설정에 따라 활성화/비활성화 가능).
+- **구현**:
+  - `AndroidManifest.xml`: `MODIFY_AUDIO_SETTINGS` 권한 추가.
+  - `Prefs.kt`: `isAutoMuteEnabled` 설정값 추가 및 관리 로직 구현.
+  - `activity_main.xml`: '통화 시작시 음소거' 토글 스위치 추가.
+  - `MainActivity.kt`: UI와 설정값 연동 로직 구현.
+  - `CallStateReceiver.kt`: `TelephonyManager.EXTRA_STATE_OFFHOOK` 감지 시 설정에 따라 `AudioManager`를 통해 마이크 음소거 처리, `TelephonyManager.EXTRA_STATE_IDLE` 감지 시 마이크 음소거 해제.
+
 ---
 
 ## 4. 통신 액션 (Intent Actions)
