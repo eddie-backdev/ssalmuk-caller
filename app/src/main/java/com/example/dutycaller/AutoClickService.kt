@@ -58,10 +58,11 @@ class AutoClickService : AccessibilityService() {
     private val noAnswerHangupRunnable = Runnable {
         val pauseTime = Prefs.getPauseTime(this)
         val isInPauseRange = Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)
-        if (Prefs.isAutoHangupEnabled(this) && !(cachedPauseFeatures.contains("HANGUP") && isInPauseRange)) {
+        val pauseFeatures = Prefs.getPauseFeatures(this)
+        if (Prefs.isAutoHangupEnabled(this) && !(pauseFeatures.contains("HANGUP") && isInPauseRange)) {
             performHangup()
         } else {
-            Log.d("AutoClickService", "No-answer hangup skipped due to pause settings (using cache).")
+            Log.d("AutoClickService", "No-answer hangup skipped due to pause settings.")
         }
     }
 
@@ -87,9 +88,10 @@ class AutoClickService : AccessibilityService() {
             if (Prefs.isAutoAnswerEnabled(this)) {
                 val pauseTime = Prefs.getPauseTime(this)
                 val isInPauseRange = Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)
-                Log.d("AutoClickService", "[AccessibilityEvent] Check: cachedFeatures=${cachedPauseFeatures}, isInPauseRange=${isInPauseRange}")
-                if (cachedPauseFeatures.contains("ANSWER") && isInPauseRange) {
-                    Log.d("AutoClickService", "Auto-answer paused (using cache).")
+                val pauseFeatures = Prefs.getPauseFeatures(this)
+                Log.d("AutoClickService", "[AccessibilityEvent] Check: features=${pauseFeatures}, isInPauseRange=${isInPauseRange}")
+                if (pauseFeatures.contains("ANSWER") && isInPauseRange) {
+                    Log.d("AutoClickService", "Auto-answer paused.")
                 } else {
                     performAutoAnswer()
                 }
@@ -112,7 +114,8 @@ class AutoClickService : AccessibilityService() {
             }
             ACTION_UPDATE_CONFIG -> {
                 if (isAutoMode) {
-                    Log.d("AutoClickService", "Config updated. Rescheduling call.")
+                    cachedPauseFeatures = Prefs.getPauseFeatures(this)
+                    Log.d("AutoClickService", "Config updated. Updated cached features: $cachedPauseFeatures. Rescheduling call.")
                     cancelScheduledCall()
                     scheduleNextCall()
                 }
@@ -148,8 +151,16 @@ class AutoClickService : AccessibilityService() {
             }
             ACTION_MAKE_CALL -> {
                 if (isAutoMode) {
-                    Log.d("AutoClickService", "ACTION_MAKE_CALL received, making call.")
-                    makeCall()
+                    val pauseTime = Prefs.getPauseTime(this)
+                    val isInPauseRange = Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)
+                    val pauseFeatures = Prefs.getPauseFeatures(this)
+                    if (pauseFeatures.contains("CALL") && isInPauseRange) {
+                        Log.d("AutoClickService", "ACTION_MAKE_CALL: still in pause range. Rescheduling.")
+                        scheduleNextCall()
+                    } else {
+                        Log.d("AutoClickService", "ACTION_MAKE_CALL received, making call.")
+                        makeCall()
+                    }
                 }
             }
         }
@@ -189,8 +200,9 @@ class AutoClickService : AccessibilityService() {
 
         val pauseTime = Prefs.getPauseTime(this)
         val isInPauseRange = Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)
-        Log.d("AutoClickService", "Pause Check: features=${cachedPauseFeatures}, inRange=${isInPauseRange}")
-        if (cachedPauseFeatures.contains("CALL") && isInPauseRange) {
+        val pauseFeatures = Prefs.getPauseFeatures(this)
+        Log.d("AutoClickService", "Pause Check: features=${pauseFeatures}, inRange=${isInPauseRange}")
+        if (pauseFeatures.contains("CALL") && isInPauseRange) {
             Log.d("AutoClickService", "Currently in a pause period. Scheduling for later.")
             sendBroadcast(Intent(ACTION_NEXT_CALL_SCHEDULED).putExtra(EXTRA_DELAY_MILLIS, -2L).setPackage(packageName))
             delayMillis = 300000L // 5 minutes
@@ -238,7 +250,8 @@ class AutoClickService : AccessibilityService() {
             // Re-check pause condition right before attempting to answer
             val pauseTime = Prefs.getPauseTime(this)
             val isInPauseRange = Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)
-            if (cachedPauseFeatures.contains("ANSWER") && isInPauseRange) {
+            val pauseFeatures = Prefs.getPauseFeatures(this)
+            if (pauseFeatures.contains("ANSWER") && isInPauseRange) {
                 Log.d("AutoClickService", "Auto-answer re-checked and paused during delay.")
                 return@postDelayed // Abort answering if paused
             }
@@ -285,12 +298,14 @@ class AutoClickService : AccessibilityService() {
     private fun scheduleLongHangup() {
         val pauseTime = Prefs.getPauseTime(this)
         val isInPauseRange = Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)
+        val pauseFeatures = Prefs.getPauseFeatures(this)
 
-        if (Prefs.isAutoHangupEnabled(this) && !(cachedPauseFeatures.contains("HANGUP") && isInPauseRange)) {
+        if (Prefs.isAutoHangupEnabled(this) && !(pauseFeatures.contains("HANGUP") && isInPauseRange)) {
             val hangupRunnable = Runnable {
                 val currentPauseTime = Prefs.getPauseTime(this)
                 val currentIsInRange = Utils.isCurrentTimeInPauseRange(currentPauseTime.first, currentPauseTime.second)
-                if (Prefs.isAutoHangupEnabled(this) && !(cachedPauseFeatures.contains("HANGUP") && currentIsInRange)) {
+                val currentPauseFeatures = Prefs.getPauseFeatures(this)
+                if (Prefs.isAutoHangupEnabled(this) && !(currentPauseFeatures.contains("HANGUP") && currentIsInRange)) {
                     performHangup()
                 } else {
                     Log.d("AutoClickService", "Hangup execution skipped due to pause settings (re-checked).")

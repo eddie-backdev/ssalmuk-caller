@@ -157,7 +157,14 @@ class CallService : InCallService() {
         if (isIncoming) {
             notifyCallState(true) // Show UI for incoming too
             if (Prefs.isAutoAnswerEnabled(this)) {
-                handler.postDelayed({ call.answer(0) }, 2000)
+                handler.postDelayed({
+                    val pauseTime = Prefs.getPauseTime(this)
+                    val isInPauseRange = Utils.isCurrentTimeInPauseRange(pauseTime.first, pauseTime.second)
+                    val pauseFeatures = Prefs.getPauseFeatures(this)
+                    if (!(pauseFeatures.contains("ANSWER") && isInPauseRange)) {
+                        call.answer(0)
+                    }
+                }, 2000)
             }
         }
     }
